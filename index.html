@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Snake</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@200;300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+
+
+</head>
+
+<body>
+    <div class="main_div">
+        <div class="countdown d-none" id="countown">
+            <p class="get_ready">Get Ready</p>
+            <p class="countdown_number" id="countdown_number">3</p>
+        </div>
+        <div class="start_overlay" id="start_overlay">
+
+            <div class="show_game_over d-none" id="show_game_over">
+                <h1 class="h1" id="game_over">Game Over</h1>
+                <div class="score" id="score">Your Score</div>
+            </div>
+            <h2><span>Start New Game</span></h2>
+            <div class="area_start_buttons">
+                <button onclick="startCountdown(500)" class="start_button">Slow</button>
+                <button onclick="startCountdown(250)" class="start_button">Medium</button>
+                <button onclick="startCountdown(100)" class="start_button">Fast</button>
+            </div>
+
+        </div>
+        <div class="mobile_buttons d-none">
+            <button onclick="mobileControl('LEFT')" class="left_button">🔼</button>
+            <div class="right_buttons">
+                <button onclick="mobileControl('UP')" class="up_button">🔼</button>
+                <button onclick="mobileControl('RIGHT')" class="right_button">🔼</button>
+                <button onclick="mobileControl('DOWN')" class="down_button">🔽</button>
+            </div>
+        </div>
+        <canvas class="canvas" id="canvas" width="495" height="495"></canvas>
+    </div>
+
+    <script>
+        let canvas = document.getElementById('canvas');
+        let ctx = canvas.getContext('2d');
+        let countdownNumber = 3;
+        let counting;
+        let rows = 15;
+        let cols = 15;
+        let snake = [{
+            x: 13,
+            y: 10
+        }];
+        let food;
+        let cellWidth = canvas.width / cols;
+        let cellHeight = canvas.height / rows;
+        let direction = 'LEFT';
+        let foodCollected = false;
+        let gameStart;
+        let controlButton = '';
+
+        changeFood();
+
+        document.addEventListener('keydown', keyDown);
+
+        draw();
+
+
+
+        function count() {
+            if (countdownNumber == 0) {
+                clearTimeout(counting);
+                document.getElementById('countown').classList.add('d-none');
+            } else {
+                counting = setTimeout(function () {
+                    countdownNumber--;
+                    document.getElementById('countdown_number').innerHTML = `
+            ${countdownNumber}
+        `;
+                    count();
+                }, 1000);
+            }
+        }
+
+        function startCountdown(speed) {
+            document.getElementById('countdown_number').innerHTML = `
+            ${countdownNumber}
+        `;
+            document.getElementById('start_overlay').classList.add('d-none');
+            document.getElementById('countown').classList.remove('d-none');
+            count();
+            setTimeout(function () {
+                startGame(speed);
+            }, 3000);
+        }
+
+
+
+        function startGame(speed) {
+            gameStart = setInterval(gameLoop, speed);
+            snake = [{
+                x: 9,
+                y: 11
+            }];
+        }
+
+
+        function draw() {// this function is 
+            ctx.fillStyle = '#EAEDED';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = "#515A5A";
+            snake.forEach(part => add(part.x, part.y)); //Gets x / y coordinates of the add function to each element in snake array
+            ctx.fillStyle = "black";
+            add(snake[0].x, snake[0].y);
+
+            ctx.fillStyle = "#76D7C4";
+            add(food.x, food.y); //Gets x / y coordinates of the add function to set the food square in position
+
+            requestAnimationFrame(draw);
+        }
+
+        function add(x, y) { //sets x / y coordinates in pixel for example 14 * cellWidth150px
+            ctx.fillRect(x * cellWidth, y * cellHeight, cellWidth - 1, cellHeight - 1); //cellWidth -1 sets width of square -1 / cellheight -1 sets height of square -1 
+        }
+
+        function shiftSnake() {
+            for (let i = snake.length - 1; i > 0; i--) {
+                const part = snake[i];
+                const lastPart = snake[i - 1];
+                part.x = lastPart.x;
+                part.y = lastPart.y;
+            }
+        }
+
+        function gameLoop() { //If keyDown increments or decrements x or y by ONE
+            gameOver();
+            if (foodCollected) {
+                snake = [{
+                    x: snake[0].x,
+                    y: snake[0].y
+                }, ...snake];
+                foodCollected = false;
+            }
+            shiftSnake();
+            moveSnake();
+            collectFood();
+        }
+
+        function collectFood() {
+            if (snake[0].x == food.x &&
+                snake[0].y == food.y) {
+                foodCollected = true;
+                changeFood();
+            }
+        }
+
+        function moveSnake() {
+            if (direction == 'LEFT') {
+                snake[0].x--;
+            }
+            if (direction == 'RIGHT') {
+                snake[0].x++;
+            }
+            if (direction == 'UP') {
+                snake[0].y--;
+            }
+            if (direction == 'DOWN') {
+                snake[0].y++;
+            }
+        }
+
+        function changeFood() {//sets x/y in randowm different food coordinates if function is called
+            let randomX = Math.floor(Math.random() * cols);//gets random number between 0 and 1 and multiplicate by cols or rows
+            let randomY = Math.floor(Math.random() * rows);//Math floor round the number
+
+            food = {
+                x: randomX, y: randomY //new randowm x/y coordinates
+            };
+        }
+
+        function mobileControl(button) {
+            direction = `${button}`;
+        }
+
+        function keyDown(e) { //eventListener KeyDown sets variable direction a new value
+            if (e.keyCode == 37) {
+                direction = 'LEFT';
+            }
+            if (e.keyCode == 38) {
+                direction = 'UP';
+            }
+            if (e.keyCode == 39) {
+                direction = 'RIGHT';
+            }
+            if (e.keyCode == 40) {
+                direction = 'DOWN';
+            }
+        }
+
+        function gameOver() {// snake runs to wall resets x / y coordinates to given default
+            let firstPart = snake[0]; // first part of snake
+            let otherParts = snake.slice(1); //all parts without the first
+            let collision = otherParts.find(part => part.x == firstPart.x && part.y == firstPart.y)
+            if (snake[0].x < 0 ||
+                snake[0].x > cols - 1 ||
+                snake[0].y < 0 ||
+                snake[0].y > rows - 1 ||
+                collision
+            ) {
+                showScore()
+                resetGame();
+            }
+        }
+
+        function resetGame() {
+            snake = [{
+                x: 13,
+                y: 10
+            }];
+            direction = 'LEFT';
+            countdownNumber = 3;
+            clearInterval(gameStart);
+        }
+
+        function showScore() {
+            document.getElementById('show_game_over').classList.remove('d-none');
+            document.getElementById('start_overlay').classList.remove('d-none');
+            document.getElementById('score').innerHTML = `
+            <p class="your_score">Your Score</p> <p class="score_number">${snake.length}</p>
+
+        `;
+        }
+
+    </script>
+
+</body>
+
+</html>
